@@ -20,9 +20,6 @@ import (
 	"github.com/taouniverse/tao"
 )
 
-// Engine of gin implements http.Handler
-var Engine *gin.Engine
-
 // ConfigKey for this repo
 const ConfigKey = "gin"
 

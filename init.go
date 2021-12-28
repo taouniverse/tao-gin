@@ -20,6 +20,9 @@ import (
 	"github.com/taouniverse/tao"
 )
 
+// Engine of gin implements http.Handler
+var Engine *gin.Engine
+
 /**
 import _ "github.com/taouniverse/tao_gin"
 */
@@ -46,15 +49,13 @@ func init() {
 	}
 
 	// setup with gin config
+	gin.SetMode(h.Mode)
+
 	Engine = gin.New()
 	Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		Output: tao.TaoWriter,
 	}))
 	Engine.Use(gin.RecoveryWithWriter(tao.TaoWriter))
-
-	if h.Mode != gin.DebugMode {
-		gin.SetMode(gin.ReleaseMode)
-	}
 
 	err = Engine.SetTrustedProxies(h.TrustProxies)
 	if err != nil {
