@@ -1,0 +1,15 @@
+.active {
+    background-color: red;
+}
+
+.green {
+    color: green;
+    background-color: powderblue;
+}
+
+.whole {
+    width: 400px;
+    height: 200px;
+    text-align: center;
+    line-height: 200px;
+}

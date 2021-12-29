@@ -16,6 +16,7 @@ package tao_gin
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"github.com/taouniverse/tao"
 	"net/http"
 	"testing"
@@ -25,10 +26,17 @@ func TestTao(t *testing.T) {
 	group := Engine.Group("/")
 
 	group.GET("/", func(context *gin.Context) {
-		context.JSON(http.StatusOK, map[string]interface{}{
+		context.JSON(http.StatusOK, gin.H{
 			"msg": "hello tao-gin",
 		})
 	})
 
-	tao.Run(nil, nil)
+	group.GET("/index", func(context *gin.Context) {
+		context.HTML(http.StatusOK, "index.html", gin.H{
+			"IP": context.ClientIP(),
+		})
+	})
+
+	err := tao.Run(nil, nil)
+	assert.Nil(t, err)
 }

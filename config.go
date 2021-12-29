@@ -30,16 +30,17 @@ type GinConfig struct {
 	Listen       string   `json:"listen"`
 	Mode         string   `json:"mode"`
 	TrustProxies []string `json:"trust_proxies"`
+	HtmlPattern  string   `json:"html_pattern"`
+	StaticPath   string   `json:"static_path"`
 	RunAfter_    []string `json:"run_after,omitempty"`
 }
 
 var defaultGin = &GinConfig{
-	Host:         "localhost",
-	Port:         "8080",
-	Listen:       "127.0.0.1",
-	Mode:         gin.DebugMode,
-	TrustProxies: nil,
-	RunAfter_:    []string{},
+	Host:      "localhost",
+	Port:      "8080",
+	Listen:    "127.0.0.1",
+	Mode:      gin.DebugMode,
+	RunAfter_: []string{},
 }
 
 // Default config
@@ -69,6 +70,12 @@ func (g *GinConfig) ValidSelf() {
 // ToTask transform itself to Task
 func (g *GinConfig) ToTask() tao.Task {
 	return tao.NewTask(ConfigKey, func(ctx context.Context, param tao.Parameter) (tao.Parameter, error) {
+		// non-block check
+		select {
+		case <-ctx.Done():
+			return param, tao.NewError(tao.ContextCanceled, "gin: context has been canceled")
+		default:
+		}
 		// gin run
 		return param, Engine.Run(g.Listen + ":" + g.Port)
 	})

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>gin test</title>
+    <!-- 1. import index.css by using relative path in web url -->
+    <link rel="stylesheet" type="text/css" href="../static/css/index.css"/>
+</head>
+
+<body>
+<div id="app">
+    Your IP is {{ .IP }},welcome!
+    <div
+            class="whole"
+            style="font-size: 30px"
+            :class="{active:isActive,green:!isActive}"
+    >
+        test for gin html & static
+    </div>
+    <div>==================================</div>
+    <div
+            class="whole"
+            :style="{fontSize:fz}"
+            :class="[isActive?'active':'green']"
+    >
+        demo to using vue.js
+    </div>
+</div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<!-- 2. import index.js by using absolute path in web url -->
+<script src="/static/js/index.js"></script>
+</html>
