@@ -69,16 +69,21 @@ func (g *GinConfig) ValidSelf() {
 
 // ToTask transform itself to Task
 func (g *GinConfig) ToTask() tao.Task {
-	return tao.NewTask(ConfigKey, func(ctx context.Context, param tao.Parameter) (tao.Parameter, error) {
-		// non-block check
-		select {
-		case <-ctx.Done():
-			return param, tao.NewError(tao.ContextCanceled, "gin: context has been canceled")
-		default:
-		}
-		// gin run
-		return param, Engine.Run(g.Listen + ":" + g.Port)
-	})
+	return tao.NewTask(
+		ConfigKey,
+		func(ctx context.Context, param tao.Parameter) (tao.Parameter, error) {
+			// non-block check
+			select {
+			case <-ctx.Done():
+				return param, tao.NewError(tao.ContextCanceled, "%s: context has been canceled", ConfigKey)
+			default:
+			}
+			// gin run
+			if Engine == nil {
+				return param, tao.NewError(tao.Unknown, "%s: engine is nil", ConfigKey)
+			}
+			return param, Engine.Run(g.Listen + ":" + g.Port)
+		})
 }
 
 // RunAfter defines pre task names
