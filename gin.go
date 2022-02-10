@@ -1,4 +1,4 @@
-// Copyright 2021
+// Copyright 2022 huija
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,39 +15,37 @@
 package tao_gin
 
 import (
-	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/taouniverse/tao"
 )
 
-/**
-import _ "github.com/taouniverse/tao_gin"
-*/
-var g = new(GinConfig)
+// Engine of gin implements http.Handler
+var Engine *gin.Engine
 
-func init() {
-	// 1. transfer config bytes to object
-	bytes, err := tao.GetConfigBytes(ConfigKey)
-	if err != nil {
-		g = g.Default().(*GinConfig)
-	} else {
-		err = json.Unmarshal(bytes, &g)
-		if err != nil {
-			panic(err)
-		}
+// setup with gin config
+// execute when import
+func setup() (err error) {
+	gin.SetMode(g.Mode)
+
+	Engine = gin.New()
+	writer := tao.GetWriter(tao.ConfigKey)
+	Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Output: writer,
+	}))
+	Engine.Use(gin.RecoveryWithWriter(writer))
+
+	// html & static
+	if g.HtmlPattern != "" {
+		Engine.LoadHTMLGlob(g.HtmlPattern)
+	}
+	if g.StaticPath != "" {
+		Engine.Static("/static", g.StaticPath)
 	}
 
-	// gin config
-	g.ValidSelf()
-
-	// 2. set object to tao
-	err = tao.SetConfig(ConfigKey, g)
+	err = Engine.SetTrustedProxies(g.TrustProxies)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	// gin setup
-	err = setup()
-	if err != nil {
-		panic(err)
-	}
+	return
 }
