@@ -25,29 +25,31 @@ import _ "github.com/taouniverse/tao_gin"
 var g = new(GinConfig)
 
 func init() {
-	// 1. transfer config bytes to object
-	bytes, err := tao.GetConfigBytes(ConfigKey)
-	if err != nil {
-		g = g.Default().(*GinConfig)
-	} else {
-		err = json.Unmarshal(bytes, &g)
+	err := tao.Register(ConfigKey, func() error {
+		// 1. transfer config bytes to object
+		bytes, err := tao.GetConfigBytes(ConfigKey)
 		if err != nil {
-			panic(err)
+			g = g.Default().(*GinConfig)
+		} else {
+			err = json.Unmarshal(bytes, &g)
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	// gin config
-	g.ValidSelf()
+		// gin config
+		g.ValidSelf()
 
-	// 2. set object to tao
-	err = tao.SetConfig(ConfigKey, g)
+		// 2. set object to tao
+		err = tao.SetConfig(ConfigKey, g)
+		if err != nil {
+			return err
+		}
+
+		// gin setup
+		return setup()
+	})
 	if err != nil {
-		panic(err)
-	}
-
-	// gin setup
-	err = setup()
-	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 }

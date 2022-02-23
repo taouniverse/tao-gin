@@ -23,7 +23,7 @@ import (
 var Engine *gin.Engine
 
 // setup with gin config
-// execute when import
+// execute when init tao universe
 func setup() (err error) {
 	gin.SetMode(g.Mode)
 
