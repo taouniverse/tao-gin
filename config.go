@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tao_gin
+package gin
 
 import (
 	"context"
@@ -23,33 +23,33 @@ import (
 // ConfigKey for this repo
 const ConfigKey = "gin"
 
-// GinConfig implements tao.Config
-type GinConfig struct {
+// Config implements tao.Config
+type Config struct {
 	Host         string   `json:"host"`
 	Port         string   `json:"port"`
 	Listen       string   `json:"listen"`
 	Mode         string   `json:"mode"`
 	TrustProxies []string `json:"trust_proxies"`
-	HtmlPattern  string   `json:"html_pattern"`
+	HTMLPattern  string   `json:"html_pattern"`
 	StaticPath   string   `json:"static_path"`
-	RunAfter_    []string `json:"run_after,omitempty"`
+	RunAfters    []string `json:"run_after,omitempty"`
 }
 
-var defaultGin = &GinConfig{
+var defaultGin = &Config{
 	Host:      "localhost",
 	Port:      "8080",
 	Listen:    "127.0.0.1",
 	Mode:      gin.DebugMode,
-	RunAfter_: []string{},
+	RunAfters: []string{},
 }
 
 // Default config
-func (g GinConfig) Default() tao.Config {
+func (g Config) Default() tao.Config {
 	return defaultGin
 }
 
 // ValidSelf with some default values
-func (g *GinConfig) ValidSelf() {
+func (g *Config) ValidSelf() {
 	if g.Host == "" {
 		g.Host = defaultGin.Host
 	}
@@ -62,13 +62,13 @@ func (g *GinConfig) ValidSelf() {
 	if g.Mode == "" {
 		g.Mode = defaultGin.Mode
 	}
-	if g.RunAfter_ == nil {
-		g.RunAfter_ = defaultGin.RunAfter_
+	if g.RunAfters == nil {
+		g.RunAfters = defaultGin.RunAfters
 	}
 }
 
 // ToTask transform itself to Task
-func (g *GinConfig) ToTask() tao.Task {
+func (g *Config) ToTask() tao.Task {
 	return tao.NewTask(
 		ConfigKey,
 		func(ctx context.Context, param tao.Parameter) (tao.Parameter, error) {
@@ -87,6 +87,6 @@ func (g *GinConfig) ToTask() tao.Task {
 }
 
 // RunAfter defines pre task names
-func (g *GinConfig) RunAfter() []string {
-	return g.RunAfter_
+func (g *Config) RunAfter() []string {
+	return g.RunAfters
 }

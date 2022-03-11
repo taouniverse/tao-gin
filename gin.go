@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tao_gin
+package gin
 
 import (
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ var Engine *gin.Engine
 // setup with gin config
 // execute when init tao universe
 func setup() (err error) {
-	gin.SetMode(g.Mode)
+	gin.SetMode(G.Mode)
 
 	Engine = gin.New()
 	writer := tao.GetWriter(tao.ConfigKey)
@@ -35,14 +35,14 @@ func setup() (err error) {
 	Engine.Use(gin.RecoveryWithWriter(writer))
 
 	// html & static
-	if g.HtmlPattern != "" {
-		Engine.LoadHTMLGlob(g.HtmlPattern)
+	if G.HTMLPattern != "" {
+		Engine.LoadHTMLGlob(G.HTMLPattern)
 	}
-	if g.StaticPath != "" {
-		Engine.Static("/static", g.StaticPath)
+	if G.StaticPath != "" {
+		Engine.Static("/static", G.StaticPath)
 	}
 
-	err = Engine.SetTrustedProxies(g.TrustProxies)
+	err = Engine.SetTrustedProxies(G.TrustProxies)
 	if err != nil {
 		return err
 	}

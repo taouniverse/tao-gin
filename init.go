@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tao_gin
+package gin
 
 import (
 	"encoding/json"
@@ -20,28 +20,29 @@ import (
 )
 
 /**
-import _ "github.com/taouniverse/tao_gin"
+import _ "github.com/taouniverse/tao-gin"
 */
-var g = new(GinConfig)
+
+var G = new(Config)
 
 func init() {
 	err := tao.Register(ConfigKey, func() error {
 		// 1. transfer config bytes to object
 		bytes, err := tao.GetConfigBytes(ConfigKey)
 		if err != nil {
-			g = g.Default().(*GinConfig)
+			G = G.Default().(*Config)
 		} else {
-			err = json.Unmarshal(bytes, &g)
+			err = json.Unmarshal(bytes, &G)
 			if err != nil {
 				return err
 			}
 		}
 
 		// gin config
-		g.ValidSelf()
+		G.ValidSelf()
 
 		// 2. set object to tao
-		err = tao.SetConfig(ConfigKey, g)
+		err = tao.SetConfig(ConfigKey, G)
 		if err != nil {
 			return err
 		}
