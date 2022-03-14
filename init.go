@@ -23,6 +23,7 @@ import (
 import _ "github.com/taouniverse/tao-gin"
 */
 
+// G config of gin
 var G = new(Config)
 
 func init() {
