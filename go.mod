@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/stretchr/testify v1.7.0
-	github.com/taouniverse/tao v0.0.5
+	github.com/taouniverse/tao v0.1.0
 )
 
 require (
