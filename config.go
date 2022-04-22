@@ -16,6 +16,7 @@ package gin
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/taouniverse/tao"
 )
@@ -25,19 +26,23 @@ const ConfigKey = "gin"
 
 // Config implements tao.Config
 type Config struct {
+	Schema       string   `json:"schema"`
 	Host         string   `json:"host"`
-	Port         string   `json:"port"`
+	Port         int      `json:"port"`
 	Listen       string   `json:"listen"`
 	Mode         string   `json:"mode"`
 	TrustProxies []string `json:"trust_proxies"`
 	HTMLPattern  string   `json:"html_pattern"`
 	StaticPath   string   `json:"static_path"`
+	Swagger      bool     `json:"swagger"`
+	Pprof        bool     `json:"pprof"`
 	RunAfters    []string `json:"run_after,omitempty"`
 }
 
 var defaultGin = &Config{
+	Schema:    "http",
 	Host:      "localhost",
-	Port:      "8080",
+	Port:      8080,
 	Listen:    "127.0.0.1",
 	Mode:      gin.DebugMode,
 	RunAfters: []string{},
@@ -50,10 +55,13 @@ func (g Config) Default() tao.Config {
 
 // ValidSelf with some default values
 func (g *Config) ValidSelf() {
+	if g.Schema != "http" && g.Schema != "https" {
+		g.Schema = "http"
+	}
 	if g.Host == "" {
 		g.Host = defaultGin.Host
 	}
-	if g.Port == "" {
+	if g.Port == 0 {
 		g.Port = defaultGin.Port
 	}
 	if g.Listen == "" {
@@ -78,11 +86,26 @@ func (g *Config) ToTask() tao.Task {
 				return param, tao.NewError(tao.ContextCanceled, "%s: context has been canceled", ConfigKey)
 			default:
 			}
-			// gin run
 			if Engine == nil {
 				return param, tao.NewError(tao.Unknown, "%s: engine is nil", ConfigKey)
 			}
-			return param, Engine.Run(g.Listen + ":" + g.Port)
+			// gin middlewares after
+			if g.Swagger {
+				swaggerOption(Engine, g)
+			}
+			if g.Pprof {
+				pprofOption(Engine)
+			}
+			// gin run
+			tao.Add(1)
+			go func() {
+				defer tao.Done()
+				err := Engine.Run(fmt.Sprintf("%s:%d", g.Listen, g.Port))
+				if err != nil {
+					tao.Panic(err)
+				}
+			}()
+			return param, nil
 		})
 }
 
