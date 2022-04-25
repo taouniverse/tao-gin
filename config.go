@@ -34,9 +34,19 @@ type Config struct {
 	TrustProxies []string `json:"trust_proxies"`
 	HTMLPattern  string   `json:"html_pattern"`
 	StaticPath   string   `json:"static_path"`
-	Swagger      bool     `json:"swagger"`
-	Pprof        bool     `json:"pprof"`
+	Pprof        *Pprof   `json:"pprof"`
 	RunAfters    []string `json:"run_after,omitempty"`
+}
+
+// Pprof config of gin
+type Pprof struct {
+	Enable bool   `json:"enable"`
+	Prefix string `json:"prefix"`
+}
+
+var defaultPprof = &Pprof{
+	Enable: true,
+	Prefix: "/pprof",
 }
 
 var defaultGin = &Config{
@@ -45,6 +55,7 @@ var defaultGin = &Config{
 	Port:      8080,
 	Listen:    "127.0.0.1",
 	Mode:      gin.DebugMode,
+	Pprof:     defaultPprof,
 	RunAfters: []string{},
 }
 
@@ -70,6 +81,15 @@ func (g *Config) ValidSelf() {
 	if g.Mode == "" {
 		g.Mode = defaultGin.Mode
 	}
+	if g.Pprof == nil {
+		g.Pprof = defaultPprof
+	} else {
+		if g.Pprof.Enable {
+			if g.Pprof.Prefix == "" {
+				g.Pprof.Prefix = defaultPprof.Prefix
+			}
+		}
+	}
 	if g.RunAfters == nil {
 		g.RunAfters = defaultGin.RunAfters
 	}
@@ -90,11 +110,8 @@ func (g *Config) ToTask() tao.Task {
 				return param, tao.NewError(tao.Unknown, "%s: engine is nil", ConfigKey)
 			}
 			// gin middlewares after
-			if g.Swagger {
-				swaggerOption(Engine, g)
-			}
-			if g.Pprof {
-				pprofOption(Engine)
+			if g.Pprof != nil && g.Pprof.Enable {
+				pprofOption(Engine, g)
 			}
 			// gin run
 			tao.Add(1)

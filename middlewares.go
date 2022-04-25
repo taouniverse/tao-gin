@@ -15,29 +15,14 @@
 package gin
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/swaggo/gin-swagger/swaggerFiles"
 	"net/http"
 	"net/http/pprof"
 )
 
-// swaggerOption for gin.Engine
-// https://swaggo.github.io/swaggo.io/declarative_comments_format/
-func swaggerOption(engine *gin.Engine, g *Config) {
-	swagger := engine.Group("/swagger")
-
-	docURL := ginSwagger.URL(fmt.Sprintf("%s://%s:%d/swagger/doc.json", g.Schema, g.Host, g.Port))
-	swagger.GET("/", func(context *gin.Context) {
-		context.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
-	})
-	swagger.GET("/:any", ginSwagger.WrapHandler(swaggerFiles.Handler, docURL))
-}
-
 // pprofOption for gin.Engine
-func pprofOption(engin *gin.Engine) {
-	pp := engin.Group("/pprof")
+func pprofOption(engin *gin.Engine, g *Config) {
+	pp := engin.Group(g.Pprof.Prefix)
 
 	var pprofHandler = func(h http.HandlerFunc) gin.HandlerFunc {
 		return func(c *gin.Context) {
