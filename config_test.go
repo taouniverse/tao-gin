@@ -1,4 +1,4 @@
-// Copyright 2021
+// Copyright 2022 huija
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,31 +15,15 @@
 package gin
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/taouniverse/tao"
-	"net/http"
 	"testing"
 )
 
-func TestTao(t *testing.T) {
-	err := tao.SetConfigPath("./test.yaml")
-	assert.Nil(t, err)
+func TestConfig(t *testing.T) {
+	g := new(Config)
+	g.ValidSelf()
+	assert.EqualValues(t, g, defaultGin)
 
-	group := Engine.Group("/")
-
-	group.GET("/", func(context *gin.Context) {
-		context.JSON(http.StatusOK, gin.H{
-			"msg": "hello tao-gin",
-		})
-	})
-
-	group.GET("/index", func(context *gin.Context) {
-		context.HTML(http.StatusOK, "index.html", gin.H{
-			"IP": context.ClientIP(),
-		})
-	})
-
-	err = tao.Run(nil, nil)
-	assert.Nil(t, err)
+	t.Log(g.RunAfter())
+	t.Log(g.ToTask())
 }

@@ -19,6 +19,20 @@ import (
 	"github.com/taouniverse/tao"
 )
 
+/**
+import _ "github.com/taouniverse/tao-gin"
+*/
+
+// G config of gin
+var G = new(Config)
+
+func init() {
+	err := tao.Register(ConfigKey, G, setup)
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
 // Engine of gin implements http.Handler
 var Engine *gin.Engine
 

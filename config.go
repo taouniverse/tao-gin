@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/taouniverse/tao"
+	"net/http"
+	"net/http/pprof"
 )
 
 // ConfigKey for this repo
@@ -59,9 +61,9 @@ var defaultGin = &Config{
 	RunAfters: []string{},
 }
 
-// Default config
-func (g Config) Default() tao.Config {
-	return defaultGin
+// Name of Config
+func (g *Config) Name() string {
+	return ConfigKey
 }
 
 // ValidSelf with some default values
@@ -129,4 +131,32 @@ func (g *Config) ToTask() tao.Task {
 // RunAfter defines pre task names
 func (g *Config) RunAfter() []string {
 	return g.RunAfters
+}
+
+/**
+middlewares
+*/
+
+// pprofOption for gin.Engine
+func pprofOption(engin *gin.Engine, g *Config) {
+	pp := engin.Group(g.Pprof.Prefix)
+
+	var pprofHandler = func(h http.HandlerFunc) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			h.ServeHTTP(c.Writer, c.Request)
+		}
+	}
+
+	pp.GET("/", pprofHandler(pprof.Index))
+	pp.GET("/cmdline", pprofHandler(pprof.Cmdline))
+	pp.GET("/profile", pprofHandler(pprof.Profile))
+	pp.POST("/symbol", pprofHandler(pprof.Symbol))
+	pp.GET("/symbol", pprofHandler(pprof.Symbol))
+	pp.GET("/trace", pprofHandler(pprof.Trace))
+	pp.GET("/allocs", pprofHandler(pprof.Handler("allocs").ServeHTTP))
+	pp.GET("/block", pprofHandler(pprof.Handler("block").ServeHTTP))
+	pp.GET("/goroutine", pprofHandler(pprof.Handler("goroutine").ServeHTTP))
+	pp.GET("/heap", pprofHandler(pprof.Handler("heap").ServeHTTP))
+	pp.GET("/mutex", pprofHandler(pprof.Handler("mutex").ServeHTTP))
+	pp.GET("/threadcreate", pprofHandler(pprof.Handler("threadcreate").ServeHTTP))
 }
