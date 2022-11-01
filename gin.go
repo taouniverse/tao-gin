@@ -42,7 +42,10 @@ func setup() (err error) {
 	gin.SetMode(G.Mode)
 
 	Engine = gin.New()
-	writer := tao.GetWriter(tao.ConfigKey)
+	writer := tao.GetWriter(G.Writer)
+	if writer == nil {
+		return tao.NewError(tao.ParamInvalid, "gin: writer of %q not found", G.Writer)
+	}
 	Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		Output: writer,
 	}))

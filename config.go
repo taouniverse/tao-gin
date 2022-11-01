@@ -37,6 +37,7 @@ type Config struct {
 	HTMLPattern  string   `json:"html_pattern"`
 	StaticPath   string   `json:"static_path"`
 	Pprof        *Pprof   `json:"pprof"`
+	Writer       string   `json:"writer"`
 	RunAfters    []string `json:"run_after,omitempty"`
 }
 
@@ -58,6 +59,7 @@ var defaultGin = &Config{
 	Listen:    "127.0.0.1",
 	Mode:      gin.DebugMode,
 	Pprof:     defaultPprof,
+	Writer:    tao.ConfigKey,
 	RunAfters: []string{},
 }
 
@@ -91,6 +93,9 @@ func (g *Config) ValidSelf() {
 				g.Pprof.Prefix = defaultPprof.Prefix
 			}
 		}
+	}
+	if g.Writer == "" {
+		g.Writer = defaultGin.Writer
 	}
 	if g.RunAfters == nil {
 		g.RunAfters = defaultGin.RunAfters
