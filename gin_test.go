@@ -15,18 +15,24 @@
 package gin
 
 import (
+	"context"
+	"net/http"
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/taouniverse/tao"
-	"net/http"
-	"testing"
 )
 
 func TestTao(t *testing.T) {
 	err := tao.SetConfigPath("./test.yaml")
 	assert.Nil(t, err)
 
-	group := Engine.Group("/")
+	engine, err := Engine()
+	assert.Nil(t, err)
+	assert.NotNil(t, engine)
+
+	group := engine.Group("/")
 
 	group.GET("/", func(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{
@@ -40,6 +46,6 @@ func TestTao(t *testing.T) {
 		})
 	})
 
-	err = tao.Run(nil, nil)
+	err = tao.Run(context.Background(), nil)
 	assert.Nil(t, err)
 }

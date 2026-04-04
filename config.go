@@ -17,17 +17,18 @@ package gin
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/taouniverse/tao"
 	"net/http"
 	"net/http/pprof"
+
+	"github.com/gin-gonic/gin"
+	"github.com/taouniverse/tao"
 )
 
 // ConfigKey for this repo
 const ConfigKey = "gin"
 
-// Config implements tao.Config
-type Config struct {
+// InstanceConfig 单实例配置
+type InstanceConfig struct {
 	Schema       string   `json:"schema"`
 	Host         string   `json:"host"`
 	Port         int      `json:"port"`
@@ -38,7 +39,6 @@ type Config struct {
 	StaticPath   string   `json:"static_path"`
 	Pprof        *Pprof   `json:"pprof"`
 	Writer       string   `json:"writer"`
-	RunAfters    []string `json:"run_after,omitempty"`
 }
 
 // Pprof config of gin
@@ -47,20 +47,25 @@ type Pprof struct {
 	Prefix string `json:"prefix"`
 }
 
+// Config 总配置，实现 tao.MultiConfig 接口
+type Config struct {
+	tao.BaseMultiConfig[InstanceConfig]
+	RunAfters []string `json:"run_after,omitempty" yaml:"run_after,omitempty"`
+}
+
 var defaultPprof = &Pprof{
 	Enable: true,
 	Prefix: "/pprof",
 }
 
-var defaultGin = &Config{
-	Schema:    "http",
-	Host:      "localhost",
-	Port:      8080,
-	Listen:    "127.0.0.1",
-	Mode:      gin.DebugMode,
-	Pprof:     defaultPprof,
-	Writer:    tao.ConfigKey,
-	RunAfters: []string{},
+var defaultInstance = &InstanceConfig{
+	Schema: "http",
+	Host:   "localhost",
+	Port:   8080,
+	Listen: "127.0.0.1",
+	Mode:   gin.DebugMode,
+	Pprof:  defaultPprof,
+	Writer: tao.ConfigKey,
 }
 
 // Name of Config
@@ -70,35 +75,38 @@ func (g *Config) Name() string {
 
 // ValidSelf with some default values
 func (g *Config) ValidSelf() {
-	if g.Schema != "http" && g.Schema != "https" {
-		g.Schema = "http"
-	}
-	if g.Host == "" {
-		g.Host = defaultGin.Host
-	}
-	if g.Port == 0 {
-		g.Port = defaultGin.Port
-	}
-	if g.Listen == "" {
-		g.Listen = defaultGin.Listen
-	}
-	if g.Mode == "" {
-		g.Mode = defaultGin.Mode
-	}
-	if g.Pprof == nil {
-		g.Pprof = defaultPprof
-	} else {
-		if g.Pprof.Enable {
-			if g.Pprof.Prefix == "" {
-				g.Pprof.Prefix = defaultPprof.Prefix
+	for name, instance := range g.Instances {
+		if instance.Schema != "http" && instance.Schema != "https" {
+			instance.Schema = "http"
+		}
+		if instance.Host == "" {
+			instance.Host = defaultInstance.Host
+		}
+		if instance.Port == 0 {
+			instance.Port = defaultInstance.Port
+		}
+		if instance.Listen == "" {
+			instance.Listen = defaultInstance.Listen
+		}
+		if instance.Mode == "" {
+			instance.Mode = defaultInstance.Mode
+		}
+		if instance.Pprof == nil {
+			instance.Pprof = defaultPprof
+		} else {
+			if instance.Pprof.Enable {
+				if instance.Pprof.Prefix == "" {
+					instance.Pprof.Prefix = defaultPprof.Prefix
+				}
 			}
 		}
-	}
-	if g.Writer == "" {
-		g.Writer = defaultGin.Writer
+		if instance.Writer == "" {
+			instance.Writer = defaultInstance.Writer
+		}
+		g.Instances[name] = instance
 	}
 	if g.RunAfters == nil {
-		g.RunAfters = defaultGin.RunAfters
+		g.RunAfters = []string{}
 	}
 }
 
@@ -107,28 +115,29 @@ func (g *Config) ToTask() tao.Task {
 	return tao.NewTask(
 		ConfigKey,
 		func(ctx context.Context, param tao.Parameter) (tao.Parameter, error) {
-			// non-block check
 			select {
 			case <-ctx.Done():
 				return param, tao.NewError(tao.ContextCanceled, "%s: context has been canceled", ConfigKey)
 			default:
 			}
-			if Engine == nil {
-				return param, tao.NewError(tao.Unknown, "%s: engine is nil", ConfigKey)
-			}
-			// gin middlewares after
-			if g.Pprof != nil && g.Pprof.Enable {
-				pprofOption(Engine, g)
-			}
-			// gin run
-			tao.Add(1)
-			go func() {
-				defer tao.Done()
-				err := Engine.Run(fmt.Sprintf("%s:%d", g.Listen, g.Port))
+			for name := range g.Instances {
+				engine, err := Factory.Get(name)
 				if err != nil {
-					tao.Panic(err)
+					return param, err
 				}
-			}()
+				inst := g.Instances[name]
+				if inst.Pprof != nil && inst.Pprof.Enable {
+					pprofOption(engine, &inst)
+				}
+				tao.Add(1)
+				go func() {
+					defer tao.Done()
+					err := engine.Run(fmt.Sprintf("%s:%d", inst.Listen, inst.Port))
+					if err != nil {
+						tao.Panic(err)
+					}
+				}()
+			}
 			return param, nil
 		})
 }
@@ -143,8 +152,8 @@ middlewares
 */
 
 // pprofOption for gin.Engine
-func pprofOption(engin *gin.Engine, g *Config) {
-	pp := engin.Group(g.Pprof.Prefix)
+func pprofOption(engin *gin.Engine, inst *InstanceConfig) {
+	pp := engin.Group(inst.Pprof.Prefix)
 
 	var pprofHandler = func(h http.HandlerFunc) gin.HandlerFunc {
 		return func(c *gin.Context) {

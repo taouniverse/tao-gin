@@ -1,4 +1,4 @@
-// Copyright 2022 huija
+// Copyright 2021-2026 huija
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,22 @@
 package gin
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/taouniverse/tao"
 )
 
 func TestConfig(t *testing.T) {
-	g := new(Config)
+	g := &Config{
+		BaseMultiConfig: tao.BaseMultiConfig[InstanceConfig]{
+			Instances: map[string]InstanceConfig{
+				tao.DefaultInstanceKey: *defaultInstance,
+			},
+		},
+	}
 	g.ValidSelf()
-	assert.EqualValues(t, g, defaultGin)
+	assert.EqualValues(t, g.GetInstances()[tao.DefaultInstanceKey], defaultInstance)
 
 	t.Log(g.RunAfter())
 	t.Log(g.ToTask())

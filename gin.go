@@ -1,4 +1,4 @@
-// Copyright 2022 huija
+// Copyright 2021
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,46 +23,60 @@ import (
 import _ "github.com/taouniverse/tao-gin"
 */
 
-// G config of gin
-var G = new(Config)
+// G is the global config instance for tao-gin
+var G = &Config{}
+
+// Factory is the global factory instance for managing gin.Engine
+var Factory *tao.BaseFactory[*gin.Engine]
 
 func init() {
-	err := tao.Register(ConfigKey, G, setup)
+	var err error
+	Factory, err = tao.Register(ConfigKey, G, NewGin)
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
-// Engine of gin implements http.Handler
-var Engine *gin.Engine
+// Engine returns the default gin engine instance
+func Engine() (*gin.Engine, error) {
+	return Factory.Get(G.GetDefaultInstanceName())
+}
 
-// setup with gin config
-// execute when init tao universe
-func setup() (err error) {
-	gin.SetMode(G.Mode)
-
-	Engine = gin.New()
-	writer := tao.GetWriter(G.Writer)
-	if writer == nil {
-		return tao.NewError(tao.ParamInvalid, "gin: writer of %q not found", G.Writer)
+// GetEngine returns the gin engine instance with specified name
+func GetEngine(name string) (*gin.Engine, error) {
+	if name == "" {
+		return Engine()
 	}
-	Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+	return Factory.Get(name)
+}
+
+// NewGin creates a new gin engine instance
+func NewGin(name string, config InstanceConfig) (*gin.Engine, func() error, error) {
+	gin.SetMode(config.Mode)
+
+	engine := gin.New()
+	writer := tao.GetWriter(config.Writer)
+	if writer == nil {
+		return nil, nil, tao.NewError(tao.ParamInvalid, "gin: writer of %q not found", config.Writer)
+	}
+	engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		Output: writer,
 	}))
-	Engine.Use(gin.RecoveryWithWriter(writer))
+	engine.Use(gin.RecoveryWithWriter(writer))
 
-	// html & static
-	if G.HTMLPattern != "" {
-		Engine.LoadHTMLGlob(G.HTMLPattern)
+	if config.HTMLPattern != "" {
+		engine.LoadHTMLGlob(config.HTMLPattern)
 	}
-	if G.StaticPath != "" {
-		Engine.Static("/static", G.StaticPath)
+	if config.StaticPath != "" {
+		engine.Static("/static", config.StaticPath)
 	}
 
-	err = Engine.SetTrustedProxies(G.TrustProxies)
+	err := engine.SetTrustedProxies(config.TrustProxies)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return
+	closer := func() error { return nil }
+
+	return engine, closer, nil
 }
