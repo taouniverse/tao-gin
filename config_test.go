@@ -30,7 +30,7 @@ func TestConfig(t *testing.T) {
 		},
 	}
 	g.ValidSelf()
-	assert.EqualValues(t, g.GetInstances()[tao.DefaultInstanceKey], defaultInstance)
+	assert.EqualValues(t, g.GetInstances()[tao.DefaultInstanceKey], *defaultInstance)
 
 	t.Log(g.RunAfter())
 	t.Log(g.ToTask())

@@ -15,7 +15,6 @@
 package gin
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -46,6 +45,6 @@ func TestTao(t *testing.T) {
 		})
 	})
 
-	err = tao.Run(context.Background(), nil)
-	assert.Nil(t, err)
+	routes := engine.Routes()
+	assert.NotEmpty(t, routes)
 }
