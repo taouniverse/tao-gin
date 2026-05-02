@@ -75,7 +75,8 @@ func (g *Config) Name() string {
 
 // ValidSelf with some default values
 func (g *Config) ValidSelf() {
-	for name, instance := range g.Instances {
+	for i := range g.Instances {
+		instance := &g.Instances[i].Cfg
 		if instance.Schema != "http" && instance.Schema != "https" {
 			instance.Schema = "http"
 		}
@@ -103,7 +104,6 @@ func (g *Config) ValidSelf() {
 		if instance.Writer == "" {
 			instance.Writer = defaultInstance.Writer
 		}
-		g.Instances[name] = instance
 	}
 	if g.RunAfters == nil {
 		g.RunAfters = []string{}
@@ -120,19 +120,20 @@ func (g *Config) ToTask() tao.Task {
 				return param, tao.NewError(tao.ContextCanceled, "%s: context has been canceled", ConfigKey)
 			default:
 			}
-			for name := range g.Instances {
+			for _, inst := range g.Instances {
+				name := inst.Name
 				engine, err := Factory.Get(name)
 				if err != nil {
 					return param, err
 				}
-				inst := g.Instances[name]
-				if inst.Pprof != nil && inst.Pprof.Enable {
-					pprofOption(engine, &inst)
+				cfg := inst.Cfg
+				if cfg.Pprof != nil && cfg.Pprof.Enable {
+					pprofOption(engine, &cfg)
 				}
 				tao.Add(1)
 				go func() {
 					defer tao.Done()
-					err := engine.Run(fmt.Sprintf("%s:%d", inst.Listen, inst.Port))
+					err := engine.Run(fmt.Sprintf("%s:%d", cfg.Listen, cfg.Port))
 					if err != nil {
 						tao.Panic(err)
 					}

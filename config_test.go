@@ -24,13 +24,14 @@ import (
 func TestConfig(t *testing.T) {
 	g := &Config{
 		BaseMultiConfig: tao.BaseMultiConfig[InstanceConfig]{
-			Instances: map[string]InstanceConfig{
-				tao.DefaultInstanceKey: *defaultInstance,
+			Instances: []tao.Instance[InstanceConfig]{
+				{Name: tao.DefaultInstanceKey, Cfg: *defaultInstance},
 			},
 		},
 	}
 	g.ValidSelf()
-	assert.EqualValues(t, g.GetInstances()[tao.DefaultInstanceKey], *defaultInstance)
+	instances := g.GetInstances()
+	assert.EqualValues(t, instances[0].Cfg, *defaultInstance)
 
 	t.Log(g.RunAfter())
 	t.Log(g.ToTask())
